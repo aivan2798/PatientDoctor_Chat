@@ -3,6 +3,7 @@ package com.edoctorug.projectstructure.patientchat
 import android.annotation.SuppressLint
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.ColorStateListDrawable
+import android.util.MutableBoolean
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.VectorConverter
 import androidx.compose.foundation.ScrollState
@@ -52,6 +53,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -74,6 +76,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 
 import com.edoctorug.projectstructure.patientchat.ChatModel
+import kotlin.jvm.internal.Ref.BooleanRef
 
 class PatientDoctorChat(apatient_name: String, adoctor_name: String)
 {
@@ -92,12 +95,12 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
 
     }
     @Composable
-    fun MainUI()
+    fun MainUI(reset: MutableState<Boolean>)
     {
         var chats = remember{ mutableStateListOf<ChatModel>() }
         var scroll_state = rememberScrollState()
         Scaffold (
-                    topBar={InAppBar(chats)},
+                    topBar={InAppBar(chats,reset)},
                     bottomBar = {MessageBox(chats,scroll_state)}
 
         )
@@ -321,7 +324,7 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
                         onClick = {
                             var chat_model = ChatModel(message,true)
                             chats.add(chat_model)
-                            scroll_state.scrollTo(scroll_state.maxValue)
+                            //scroll_state.scrollTo(scroll_state.maxValue)
                         }) {
                         Icon(
                             Icons.Filled.Send,
@@ -356,7 +359,7 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun InAppBar(chats: MutableList<ChatModel>)
+    fun InAppBar(chats: MutableList<ChatModel>, reset: MutableState<Boolean>)
     {
         TopAppBar(
                     title = {Text(
@@ -384,7 +387,7 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
                                         Icon(Icons.TwoTone.Delete, contentDescription = "",tint=Color.White)
 
                                     }
-                                    IconButton(onClick = { /*TODO*/ }) {
+                                    IconButton(onClick = { /*TODO*/reset.value= false }) {
                                         Icon(Icons.TwoTone.Close, contentDescription = "",tint=Color.White)
 
                                     }
