@@ -34,7 +34,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -75,19 +78,31 @@ fun PatientChatUI()
 
 }
 
+fun login()
+{
+
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeUI()
 {
     var login = remember{ mutableStateOf(false) }
     var name by remember{ mutableStateOf("") }
+    var pass by remember{ mutableStateOf("") }
 
     if (login.value==false) {
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .fillMaxWidth()
-                .background(Color.LightGray)
+                .background(Brush.linearGradient(
+                                                    colors = listOf(Color.Black,Color(0, 255, 136),Color.Black),
+                                                    start = Offset.Zero,
+                                                    end = Offset.Infinite,
+                                                    tileMode = TileMode.Mirror
+                                                )
+                            )
         )
         {
             Column(modifier = Modifier
@@ -103,9 +118,16 @@ fun HomeUI()
                     letterSpacing = TextUnit(2f, TextUnitType.Sp)))
                 TextField(
                     value = name,
+                    label = {Text("your username",
+                        style=TextStyle(
+                            fontSize = TextUnit(12f, TextUnitType.Sp),
+                            fontStyle = FontStyle.Normal,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = TextUnit(2f, TextUnitType.Sp)
+                        ))},
                     onValueChange = { name = it },
                     modifier = Modifier
-                        .width(230.dp).padding(start=5.dp),
+                        .width(230.dp).padding(start=5.dp).align(alignment = Alignment.CenterHorizontally),
                     leadingIcon = {
                         Icon(
                             Icons.Outlined.AccountCircle,
@@ -128,7 +150,41 @@ fun HomeUI()
 
                 )
 
-                Row()
+                TextField(
+                    value = pass,
+                    label = {Text("your password",
+                             style=TextStyle(
+                                 fontSize = TextUnit(12f, TextUnitType.Sp),
+                                 fontStyle = FontStyle.Normal,
+                                 fontFamily = FontFamily.Monospace,
+                                 letterSpacing = TextUnit(2f, TextUnitType.Sp)
+                             ))},
+                    onValueChange = { pass = it },
+                    modifier = Modifier
+                        .width(230.dp).padding(start=5.dp).align(alignment = Alignment.CenterHorizontally),
+                    leadingIcon = {
+                        Icon(
+                            Icons.Outlined.AccountCircle,
+                            contentDescription = "send mesage"
+                        )
+                    },
+                    colors = TextFieldDefaults.textFieldColors(
+                        unfocusedIndicatorColor = Color.Blue,
+                        focusedIndicatorColor = Color.White,
+                        cursorColor = Color.Black,
+                        containerColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    textStyle = TextStyle(
+                        fontSize = TextUnit(10f, TextUnitType.Sp),
+                        fontStyle = FontStyle.Normal,
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = TextUnit(2f, TextUnitType.Sp)
+                    )
+
+                )
+
+                Row(modifier = Modifier.align(alignment = Alignment.CenterHorizontally))
                 {
                     Button(
                                 colors=ButtonDefaults.buttonColors(

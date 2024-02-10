@@ -1,5 +1,7 @@
 package com.edoctorug.projectstructure.patientchat
 
+import kotlinx.coroutines.launch
+
 import android.annotation.SuppressLint
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.ColorStateListDrawable
@@ -9,20 +11,25 @@ import androidx.compose.animation.VectorConverter
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 //import androidx.compose.foundation.layout.FlowColumnScopeInstance.align
 //import androidx.compose.foundation.layout.FlowColumnScopeInstance.align
+//import androidx.compose.foundation.layout.FlowColumnScopeInstance.align
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -40,9 +47,12 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.twotone.AddCircle
 import androidx.compose.material.icons.twotone.Close
 import androidx.compose.material.icons.twotone.Delete
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -53,6 +63,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -62,9 +73,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -76,6 +89,8 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 
 import com.edoctorug.projectstructure.patientchat.ChatModel
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlin.jvm.internal.Ref.BooleanRef
 
 class PatientDoctorChat(apatient_name: String, adoctor_name: String)
@@ -99,21 +114,33 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
     {
         var chats = remember{ mutableStateListOf<ChatModel>() }
         var scroll_state = rememberScrollState()
+        LaunchedEffect(Unit){
+            scroll_state.scrollTo(100)
+            // init_bool = !init_bool
+        }
         Scaffold (
                     topBar={InAppBar(chats,reset)},
-                    bottomBar = {MessageBox(chats,scroll_state)}
+                    //bottomBar = {MessageBox(chats,scroll_state)}
 
         )
         {innerPadding->Surface(
-                                color= Color.Gray,
+                                color= Color.Transparent,
                                 modifier = Modifier
                                     .padding(innerPadding)
                                     .fillMaxHeight()
                                     .fillMaxWidth(),
 
                                ) {
+                                    Box(modifier = Modifier.background(Brush.linearGradient(
+                                        colors = listOf(Color.Black,Color(0, 255, 136),Color.Black),
+                                        start = Offset.Zero,
+                                        end = Offset.Infinite,
+                                        tileMode = TileMode.Mirror)
+                                    ))
+                                    {
+                                        ChatUI(chats, scroll_state)
 
-                                    ChatUI(chats,scroll_state)
+                                    }
                                 }
         }
 
@@ -125,46 +152,80 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
     {
 
 
-        Box(modifier = Modifier
+        Column(modifier = Modifier
             .padding(10.dp)
             .fillMaxWidth()
-            .fillMaxHeight())
+            .fillMaxHeight()
+            .background(
+                Brush.linearGradient(
+                    listOf(
+                        Color(255, 245, 235),
+                        Color(255, 255, 255, 176),
+                        Color(220, 254, 222),
+                        Color(255, 255, 255),
+                        Color(255, 255, 255, 176)
+                    ),
+                    Offset.Zero,
+                    Offset.Infinite,
+                    TileMode.Repeated
+                ),
+                shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 20.dp)
+            )
+            .padding(10.dp),
+            //verticalArrangement = Arrangement.SpaceBetween
+        )
         {
             ChatBoxes(chats,scroll_state)
-            /*
-            Box(modifier = Modifier.align(Alignment.BottomStart))
-            {
-                MessageBox(chats)
-            }
-            */
+
+            //Box(modifier = Modifier.align(Alignment.BottomStart))
+            //{
+                MessageBox(chats,scroll_state)
+            //}
+
         }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun ChatBoxes(chats: MutableList<ChatModel>,scroll_state: ScrollState)
-    {
+    fun ChatBoxes(chats: MutableList<ChatModel>,scroll_state: ScrollState) {
         //val chatboxes =  List<String>()
         //var chats = remember{ mutableStateListOf<String>() }
         var init_bool = true
 
 
         Column(
-                modifier = Modifier
-                    .background(Color.White)
-                    .fillMaxWidth()
-                    .fillMaxHeight()
-                    .verticalScroll(scroll_state)
-            )
+            modifier = Modifier
+                .background(Color.Transparent)
+                .fillMaxWidth()
+                .fillMaxHeight(0.9f)
+                .verticalScroll(scroll_state)
+            //.padding(10.dp)
+        )
+        {
+
+            for (chat in chats)
             {
-                for(chat in chats)
-                {
-                    init_bool = chat.is_patient
-                    ChatBox(chat.message,init_bool)
-                   // init_bool = !init_bool
-                }
+                init_bool = chat.is_patient
+                ChatBox(chat.message, init_bool)
+
 
             }
+
+            ///chats
+
+            LaunchedEffect(Unit){
+                //scroll_state.scrollBy(800f)
+                GlobalScope.launch {
+                    scroll_state.scrollBy(100f)
+                }
+                // init_bool = !init_bool
+            }
+
+
+
+
+
+        }
 
     }
 
@@ -207,7 +268,7 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
                         chat_msg,
                         style = TextStyle(
                             color = Color.White,
-                            fontSize = TextUnit(13f, TextUnitType.Sp),
+                            fontSize = TextUnit(12f, TextUnitType.Sp),
                             fontStyle = FontStyle.Normal,
                             fontFamily = FontFamily.Monospace,
                             letterSpacing = TextUnit(2f, TextUnitType.Sp)
@@ -215,7 +276,7 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
                         modifier = Modifier.padding(top = 5.dp, start = 8.dp, bottom = 5.dp)
                     )
 
-                    Spacer(modifier = Modifier.width(100.dp))
+                    Spacer(modifier = Modifier.fillMaxWidth(0.2f))
                 }
             }
         }
@@ -260,7 +321,7 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
                         modifier = Modifier.padding(top = 5.dp, start=8.dp, bottom = 5.dp)
                     )
 
-                    Spacer(modifier = Modifier.width(100.dp))
+                    Spacer(modifier = Modifier.fillMaxWidth(0.2f))
                 }
             }
         }
@@ -268,42 +329,54 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun MessageBox(chats: MutableList<ChatModel>,scroll_state: ScrollState)
-    {
+    fun MessageBox(chats: MutableList<ChatModel>,scroll_state: ScrollState) {
+        lateinit var launched_scroll: Job;
         var amsg: String;
-        var message by remember{ mutableStateOf("") };
-
+        var message by remember { mutableStateOf("") };
             Row(
                 modifier = Modifier
                     .padding(5.dp)
-                    .height(50.dp)
-                    .border(1.dp, Color.Black, shape = RoundedCornerShape(20.dp)),
+                    .height(45.dp)
+                    //.border(1.dp, Color.Black, shape = RoundedCornerShape(20.dp,20.dp,20.dp,20.dp))
+                    .background(
+                        Color(93, 139, 79, 255),
+                        shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 20.dp)
+                    ),
                 horizontalArrangement = Arrangement.SpaceBetween
             )
             {
-                /*Row(
-                //modifier=Modifier.width(260.dp).height(50.dp),
-                horizontalArrangement = Arrangement.SpaceBetween)
-            {*/
+
                 TextField(
+                    //label = {Text("Message")},
+                    placeholder = {Text("Message", style = TextStyle(
+                        fontSize = TextUnit(10f, TextUnitType.Sp),
+                        fontStyle = FontStyle.Normal,
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = TextUnit(2f, TextUnitType.Sp)
+                    ))},
                     value = message,
                     onValueChange = { message = it },
                     modifier = Modifier
-                        .width(230.dp)
-                        .fillMaxHeight(),
+                        .fillMaxWidth(0.8f)
+                        .fillMaxHeight()
+                        .background(Color.Transparent),
+                        maxLines = 50,
+                        minLines = 10,
+                        //.padding(10.dp),
                     leadingIcon = {
                         Icon(
                             Icons.Outlined.Email,
                             contentDescription = "send mesage"
                         )
                     },
+                    singleLine = false,
                     colors = TextFieldDefaults.textFieldColors(
-                        unfocusedIndicatorColor = Color.Black,
-                        focusedIndicatorColor = Color.Gray,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
                         cursorColor = Color.Black,
                         containerColor = Color.Transparent
                     ),
-                    shape = RoundedCornerShape(10.dp),
+
                     textStyle = TextStyle(
                         fontSize = TextUnit(10f, TextUnitType.Sp),
                         fontStyle = FontStyle.Normal,
@@ -312,6 +385,7 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
                     )
 
                 )
+
                 ConstraintLayout()
                 {
                     val (send_refs, add_ref) = createRefs()
@@ -322,9 +396,13 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
                             top.linkTo(parent.top, margin = 0.dp)
                         },
                         onClick = {
-                            var chat_model = ChatModel(message,true)
+                            var chat_model = ChatModel(message, true)
+                            var dchat_model = ChatModel(message, false)
                             chats.add(chat_model)
-                            //scroll_state.scrollTo(scroll_state.maxValue)
+                            chats.add(dchat_model)
+                            message = ""
+
+                            //}
                         }) {
                         Icon(
                             Icons.Filled.Send,
@@ -341,7 +419,7 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
                             absoluteRight.linkTo(send_refs.absoluteRight, margin = 35.dp)
                         }, onClick = {
 
-                                    }) {
+                        }) {
                         Icon(
                             Icons.TwoTone.AddCircle,
                             contentDescription = "",
@@ -355,6 +433,7 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
                 //}
             }
 
+      //  }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -362,33 +441,59 @@ class PatientDoctorChat(apatient_name: String, adoctor_name: String)
     fun InAppBar(chats: MutableList<ChatModel>, reset: MutableState<Boolean>)
     {
         TopAppBar(
-                    title = {Text(
-                                    "Hello  $this_patient_name",
+                    title = {
+                                Text(
+                                    "Hello $this_patient_name",
                                      style = TextStyle(
                                                         color=Color.White,
-                                                        fontSize = TextUnit(15f, TextUnitType.Sp),
+                                                        fontSize = TextUnit(10f, TextUnitType.Sp),
                                                         fontWeight = FontWeight.Light,
                                                         fontStyle = FontStyle.Normal,
-                                                        letterSpacing = TextUnit(8f,TextUnitType.Sp),
+                                                        fontFamily = FontFamily.Monospace,
+                                                        letterSpacing = TextUnit(1f,TextUnitType.Sp),
 
-                                         )
+                                         ),
+                                     modifier = Modifier.padding(5.dp)
                                 )
                             },
-                    navigationIcon = { Icon(Icons.Filled.AccountCircle, contentDescription = "Patient",tint=Color.White)},
-                    modifier = Modifier.height(25.dp),
+                    navigationIcon = { Icon(
+                                                Icons.Filled.AccountCircle,
+                                                contentDescription = "Patient",
+                                                tint=Color.White,
+                                                modifier=Modifier.padding(top=5.dp)
+                                            )
+                                     },
+                    modifier = Modifier
+                        .height(35.dp)
+                        .shadow(elevation = 10.dp),
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Black
+                        containerColor = Color(16, 48, 13)
                     ),
                     actions = {
-                                //Row(modifier=Modifier.padding(0.1.dp)) {
-                                    IconButton(onClick = { /*TODO*/
+
+                                    IconButton(
+                                                onClick = { /*TODO*/
                                                             chats.clear()
-                                                        }) {
-                                        Icon(Icons.TwoTone.Delete, contentDescription = "",tint=Color.White)
+                                                           },
+
+                                                colors = IconButtonDefaults.iconButtonColors(
+                                                //containerColor = Color.Black,
+                                                disabledContainerColor = Color.Red
+                                        )
+                                               )
+                                    {
+                                                    Icon(Icons.TwoTone.Delete, contentDescription = "",tint=Color.White)//, modifier = Modifier.size(5.dp))
 
                                     }
-                                    IconButton(onClick = { /*TODO*/reset.value= false }) {
-                                        Icon(Icons.TwoTone.Close, contentDescription = "",tint=Color.White)
+                                    IconButton(onClick = { /*TODO*/reset.value= false },
+                                              colors = IconButtonDefaults.iconButtonColors(
+                                                  //containerColor = Color.Black,
+                                                  disabledContainerColor = Color.Red
+                                              ),
+
+                                              )
+                                    {
+                                        Icon(Icons.Filled.Close, contentDescription = "",tint=Color.Red)
 
                                     }
                             //    }
